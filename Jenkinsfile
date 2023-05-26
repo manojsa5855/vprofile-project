@@ -71,7 +71,8 @@ pipeline {
         stage('push') {
           steps{
           sh 'docker push manojsai5855/java:$BUILD_NUMBER'
-          sh 'docker push manojsai5855/javanewdb:$BUILD_NUMBER' 
+          sh 'docker push manojsai5855/javanewdb:$BUILD_NUMBER'
+
           }
 	}
 /*
