@@ -6,8 +6,7 @@ pipeline {
 	}
 	environment{
 	    DOCKERHUB_CREDENTIALS=credentials('dockerhubcred')
-	 
-	    
+	    appRegistry = "manojsai5855/javapocdb"
 	}
 	
     stages{
@@ -60,7 +59,7 @@ pipeline {
        
          script {
                sh 'docker build -t manojsai5855/javapoc:$BUILD_NUMBER .'
-               sh 'docker build -t manojsai5855/javapocdb:$BUILD_NUMBER -f Dockerfile1 .'
+               dockerImage = docker.build( appRegistry + ":$BUILD_NUMBER", "./Dockerfile1")
 
 
          }
