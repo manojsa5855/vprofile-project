@@ -59,8 +59,9 @@ pipeline {
        steps {
        
          script {
-                sh 'docker build -t manojsai5855/java:$BUILD_NUMBER .'
-                sh 'docker buid -t manojsai5855/javadb:$BUILD_NUMBER -f Dockerfile1 .'
+                sh 'docker build -t manojsai5855/javapoc:$BUILD_NUMBER .'
+                sh 'docker build -t manojsai5855/javapocdb:$BUILD_NUMBER -f Dockerfile1 .'
+
 
          }
     
