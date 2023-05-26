@@ -57,8 +57,7 @@ pipeline {
     stage('Build App Image') {
        steps {
               sh 'docker build -t manojsai5855/javapoc:$BUILD_NUMBER .'
-          
-    }
+       }
     stage('Build Db Image'){
 	    steps{
 		    sh 'docker build -t manojsai5855/javapoc:$BUILD_NUMBER -f Dockerfile1 .'
