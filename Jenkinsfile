@@ -61,7 +61,7 @@ pipeline {
     }
     stage('Build Db Image'){
 	    steps{
-		    sh 'docker build -t manojsai5855/javapoc:$BUILD_NUMBER -f Dockerfile1 .'
+		    sh 'docker build -t manojsai5855/javapocdb:$BUILD_NUMBER -f Dockerfile1 .'
     }
     }
         stage('login') {
@@ -71,8 +71,8 @@ pipeline {
         }
         stage('push') {
           steps{
-          sh 'docker push manojsai5855/java:$BUILD_NUMBER'
-          sh 'docker push manojsai5855/javanewdb:$BUILD_NUMBER'
+          sh 'docker push manojsai5855/javapoc:$BUILD_NUMBER'
+          sh 'docker push manojsai5855/javapocdb:$BUILD_NUMBER'
 
           }
 	}
