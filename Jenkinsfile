@@ -12,7 +12,7 @@ pipeline {
     stages{
         stage('Fetch code') {
           steps{
-              git branch: 'docker', url:'https://github.com/manojsa5855/vprofile-project.git'
+              git branch: 'vp-rem', credentialsId: 'gitcred', url: 'https://github.com/manojsa5855/vprofile-project.git'
           }  
         }
 
