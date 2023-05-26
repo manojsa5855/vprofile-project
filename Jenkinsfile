@@ -60,7 +60,7 @@ pipeline {
        
          script {
                 sh 'docker build -t manojsai5855/java:$BUILD_NUMBER .'
-                sh 'docker build -t manojsai5855/javanewdb:$BUILD_NUMBER -f Dockerfile1 .'
+                sh 'docker buid -t manojsai5855/javadb:$BUILD_NUMBER -f Dockerfile1 .'
 
          }
     
