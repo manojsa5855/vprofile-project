@@ -1,121 +1,119 @@
 pipeline {
-    
-	agent any
-/*	
-	tools {
-        maven "maven3"
-    }
-*/	
-    environment {
-        NEXUS_VERSION = "nexus3"
-        NEXUS_PROTOCOL = "http"
-        NEXUS_URL = "172.31.40.209:8081"
-        NEXUS_REPOSITORY = "vprofile-release"
-	NEXUS_REPO_ID    = "vprofile-release"
-        NEXUS_CREDENTIAL_ID = "nexuslogin"
-        ARTVERSION = "${env.BUILD_ID}"
-    }
+    agent any
+    tools {
+	    maven "MAVEN3"
+	    jdk "OracleJDK8"
+	}
+	environment{
+	    DOCKERHUB_CREDENTIALS=credentials('dockerhubcred')
+	 
+	    
+	}
 	
     stages{
-        
-        stage('BUILD'){
+        stage('Fetch code') {
+          steps{
+              git branch: 'docker', url:'https://github.com/manojsa5855/vprofile-project.git'
+          }  
+        }
+
+        stage('Build') {
             steps {
                 sh 'mvn clean install -DskipTests'
             }
             post {
                 success {
-                    echo 'Now Archiving...'
-                    archiveArtifacts artifacts: '**/target/*.war'
+                    echo "Now Archiving."
+                    archiveArtifacts artifacts: '**/*.war'
                 }
             }
         }
-
-	stage('UNIT TEST'){
+        stage('Test'){
             steps {
                 sh 'mvn test'
             }
+
         }
 
-	stage('INTEGRATION TEST'){
+
+        stage('Sonar Analysis') {
+            environment {
+                scannerHome = tool 'Sonar4'
+            }
             steps {
-                sh 'mvn verify -DskipUnitTests'
-            }
-        }
-		
-        stage ('CODE ANALYSIS WITH CHECKSTYLE'){
-            steps {
-                sh 'mvn checkstyle:checkstyle'
-            }
-            post {
-                success {
-                    echo 'Generated Analysis Result'
-                }
-            }
-        }
-
-        stage('CODE ANALYSIS with SONARQUBE') {
-          
-		  environment {
-             scannerHome = tool 'sonarscanner4'
-          }
-
-          steps {
-            withSonarQubeEnv('sonar-pro') {
-               sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
-                   -Dsonar.projectName=vprofile-repo \
+               withSonarQubeEnv('Sonar') {
+                   sh '''${scannerHome}/bin/sonar-scanner -Dsonar.projectKey=vprofile \
+                   -Dsonar.projectName=vprofile \
                    -Dsonar.projectVersion=1.0 \
                    -Dsonar.sources=src/ \
                    -Dsonar.java.binaries=target/test-classes/com/visualpathit/account/controllerTest/ \
                    -Dsonar.junit.reportsPath=target/surefire-reports/ \
                    -Dsonar.jacoco.reportsPath=target/jacoco.exec \
                    -Dsonar.java.checkstyle.reportPaths=target/checkstyle-result.xml'''
+              }
             }
-
-            timeout(time: 10, unit: 'MINUTES') {
-               waitForQualityGate abortPipeline: true
-            }
-          }
         }
 
-        stage("Publish to Nexus Repository Manager") {
+
+    stage('Build App Image') {
+       steps {
+       
+         script {
+                sh 'docker build -t manojsai5855/java:$BUILD_NUMBER .'
+                sh 'docker build -t manojsai5855/javanewdb:$BUILD_NUMBER -f Dockerfile1 .'
+
+         }
+    
+    }
+        stage('login') {
+          steps{
+              sh 'echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u manojsai5855 --password-stdin '
+          }
+        }
+        stage('push') {
+          steps{
+          sh 'docker push manojsai5855/java:$BUILD_NUMBER'
+          sh 'docker push manojsai5855/javanewdb:$BUILD_NUMBER' 
+          }
+	}
+/*
+       
+        stage('Fetching cluster Infrastucture Code') {
+          steps{
+              git branch: 'main', url:'https://github.com/sharonraju143/Project_final.git'
+          }  
+        }
+       
+       stage('Terraform Init') {
             steps {
                 script {
-                    pom = readMavenPom file: "pom.xml";
-                    filesByGlob = findFiles(glob: "target/*.${pom.packaging}");
-                    echo "${filesByGlob[0].name} ${filesByGlob[0].path} ${filesByGlob[0].directory} ${filesByGlob[0].length} ${filesByGlob[0].lastModified}"
-                    artifactPath = filesByGlob[0].path;
-                    artifactExists = fileExists artifactPath;
-                    if(artifactExists) {
-                        echo "*** File: ${artifactPath}, group: ${pom.groupId}, packaging: ${pom.packaging}, version ${pom.version} ARTVERSION";
-                        nexusArtifactUploader(
-                            nexusVersion: NEXUS_VERSION,
-                            protocol: NEXUS_PROTOCOL,
-                            nexusUrl: NEXUS_URL,
-                            groupId: pom.groupId,
-                            version: ARTVERSION,
-                            repository: NEXUS_REPOSITORY,
-                            credentialsId: NEXUS_CREDENTIAL_ID,
-                            artifacts: [
-                                [artifactId: pom.artifactId,
-                                classifier: '',
-                                file: artifactPath,
-                                type: pom.packaging],
-                                [artifactId: pom.artifactId,
-                                classifier: '',
-                                file: "pom.xml",
-                                type: "pom"]
-                            ]
-                        );
-                    } 
-		    else {
-                        error "*** File: ${artifactPath}, could not be found";
-                    }
+                    sh 'terraform init'
+                    sh 'terraform apply --auto-approve -lock=false'
+                    sh 'echo "[Master]" > /etc/ansible/hosts | az vm show -d -g Final_POC -n master-vm --query publicIps -o tsv >> /etc/ansible/hosts'
+                    sh 'echo "[worker]" >> /etc/ansible/hosts | az vm show -d -g Final_POC -n worker-vm --query publicIps -o tsv >> /etc/ansible/hosts'
+                    sh 'ansible-playbook site.yml'
+
+                }
+            }
+       }
+ */
+       
+/*       
+       stage('Fetching k8s manifest files') {
+          steps{
+              git branch: 'main', url:'https://github.com/sharonraju143/kubernetes-poc.git'
+          }  
+        }
+        
+        stage('Deploying manifest files') {
+            steps {
+                script {
+                    sh 'ansible-playbook deploy.yml'
+                    
                 }
             }
         }
-
+*/
 
     }
-
-
 }
